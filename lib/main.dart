@@ -3,6 +3,7 @@ import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math';
 
 void main() {
   runApp(MyApp());
@@ -12,12 +13,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sexo2',
+      title: 'Bluetooth Control',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.indigo,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: BluetoothPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -37,6 +39,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
   String _receivedData = "";
   final TextEditingController _messageController = TextEditingController();
   String _connectionStatus = "Desconectado";
+  int _rpmValue = 0;
 
   @override
   void initState() {
@@ -87,7 +90,6 @@ class _BluetoothPageState extends State<BluetoothPage> {
 
     try {
       _connection = await BluetoothConnection.toAddress(device.address);
-
       setState(() {
         _connectedDevice = device;
         _isConnecting = false;
@@ -107,7 +109,15 @@ class _BluetoothPageState extends State<BluetoothPage> {
     _connection?.input
         ?.listen((data) {
           String incomingData = String.fromCharCodes(data);
-          setState(() => _receivedData += incomingData);
+          setState(() {
+            _receivedData += incomingData;
+
+            // Buscar un valor tipo RPM:1234
+            final match = RegExp(r'RPM[:\-]?\s*(\d+)').firstMatch(incomingData);
+            if (match != null) {
+              _rpmValue = int.tryParse(match.group(1) ?? '0') ?? 0;
+            }
+          });
         })
         .onDone(() {
           _disconnect();
@@ -120,6 +130,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
       _connectedDevice = null;
       _connectionStatus = "Desconectado";
       _receivedData = "";
+      _rpmValue = 0;
     });
   }
 
@@ -175,6 +186,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
             _buildDevicesList(),
             _buildMessageInput(),
             _buildReceivedData(),
+            _buildRPMGauge(),
             _buildControlButtons(),
           ],
         ),
@@ -315,6 +327,30 @@ class _BluetoothPageState extends State<BluetoothPage> {
     );
   }
 
+  Widget _buildRPMGauge() {
+    double percent = (_rpmValue.clamp(0, 6000) / 6000);
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text(
+              "RPM: $_rpmValue",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: percent,
+              minHeight: 16,
+              backgroundColor: Colors.grey[300],
+              color: percent > 0.75 ? Colors.red : Colors.green,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildControlButtons() {
     return Card(
       child: Padding(
@@ -339,7 +375,10 @@ class _BluetoothPageState extends State<BluetoothPage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => _sendData("LED_OFF"),
-                    child: Text("Apagar LED"),
+                    child: Text(
+                      "Apagar LED",
+                      style: TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                     ),
