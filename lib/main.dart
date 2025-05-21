@@ -14,9 +14,36 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Bluetooth Control',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+      theme: ThemeData.dark().copyWith(
+        colorScheme: ColorScheme.dark(
+          primary: Colors.indigo,
+          secondary: Colors.indigoAccent,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.indigo,
+            foregroundColor: Colors.white,
+          ),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: MaterialStateProperty.all(Colors.indigoAccent),
+          trackColor: MaterialStateProperty.all(Colors.indigo),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: Colors.grey[900],
+          contentTextStyle: TextStyle(color: Colors.white),
+        ),
+        cardColor: Colors.grey[850],
+        scaffoldBackgroundColor: Colors.black,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey[800],
+          border: OutlineInputBorder(),
+        ),
       ),
       home: BluetoothPage(),
       debugShowCheckedModeBanner: false,
@@ -112,7 +139,6 @@ class _BluetoothPageState extends State<BluetoothPage> {
           setState(() {
             _receivedData += incomingData;
 
-            // Buscar un valor tipo RPM:1234
             final match = RegExp(r'RPM[:\-]?\s*(\d+)').firstMatch(incomingData);
             if (match != null) {
               _rpmValue = int.tryParse(match.group(1) ?? '0') ?? 0;
