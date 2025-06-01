@@ -570,7 +570,9 @@ class _BluetoothPageState extends State<BluetoothPage> {
             label: "${_pedalValue.toInt()}°",
             onChanged: (value) {
               setState(() => _pedalValue = value);
-              _sendData("SERVO:${_pedalValue.toInt()}");
+            },
+            onChangeEnd: (value) {
+              _sendData("SERVO:${value.toInt()}");
             },
           ),
         ),
